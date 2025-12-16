@@ -42,7 +42,7 @@ jobs:
 
       - name: Run Molecule tests.
         working-directory: ./apache
-        run: ls -lrt && molecule test
+        run: ls -lrt && molecule create
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
