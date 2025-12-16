@@ -23,7 +23,7 @@ jobs:
       - name: Check out the codebase.
         uses: actions/checkout@v4
         with:
-          path: 'playbooks/roles/apache'
+          path: 'playbooks/roles'
 
       - name: Set up Python 3.
         uses: actions/setup-python@v5
@@ -42,12 +42,12 @@ jobs:
             sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
         if: ${{ startsWith(matrix.distro, 'debian') }}
 
-      - name: Check the current path.
-        run: pwd
+      - name: Go to the role.
+        run: cd apache
 
-    #   - name: Run Molecule tests.
-    #     run: molecule test
-    #     env:
-    #       PY_COLORS: '1'
-    #       ANSIBLE_FORCE_COLOR: '1'
-    #       MOLECULE_DISTRO: ${{ matrix.distro }}
+      - name: Run Molecule tests.
+        run: molecule test
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          MOLECULE_DISTRO: ${{ matrix.distro }}
