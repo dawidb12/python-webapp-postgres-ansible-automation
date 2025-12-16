@@ -51,7 +51,7 @@ jobs:
     
       - name: Run Molecule tests for app role.
         working-directory: playbooks/roles/app
-        run: molecule test
+        run: molecule converge && molecule destroy
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
@@ -59,7 +59,7 @@ jobs:
 
       - name: Run Molecule tests for database role.
         working-directory: playbooks/roles/database
-        run: molecule test
+        run: molecule converge && molecule destroy
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
@@ -67,7 +67,7 @@ jobs:
 
       - name: Run Molecule tests for monitoring role.
         working-directory: playbooks/roles/monitoring
-        run: molecule test
+        run: molecule converge && molecule destroy
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
@@ -75,7 +75,7 @@ jobs:
 
       - name: Run Molecule tests for node_exporter role.
         working-directory: playbooks/roles/node_exporter
-        run: molecule test
+        run: molecule converge && molecule destroy
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
