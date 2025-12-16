@@ -1,4 +1,4 @@
-name: Docker Image CI pipeline
+name: Ansible roles testing with molecule
 
 on:
   # push:
