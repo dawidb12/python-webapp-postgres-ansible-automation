@@ -28,14 +28,14 @@ jobs:
         run: pip3 install ansible molecule molecule-plugins[docker] docker
 
       # See: https://github.com/geerlingguy/ansible-role-mysql/issues/422
-      - name: Disable AppArmor on Debian.
-        run: |
-            set -x
-            sudo apt update
-            sudo apt-get install apparmor-profiles
-            sudo ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
-            sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
-        if: ${{ startsWith(matrix.distro, 'debian') }}
+    #   - name: Disable AppArmor on Debian.
+    #     run: |
+    #         set -x
+    #         sudo apt update
+    #         sudo apt-get install apparmor-profiles
+    #         sudo ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
+    #         sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
+    #     if: ${{ startsWith(matrix.distro, 'debian') }}
 
       - name: Run Molecule tests for apache role.
         working-directory: playbooks/roles/apache
