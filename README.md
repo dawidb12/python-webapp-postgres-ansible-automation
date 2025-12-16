@@ -1,4 +1,4 @@
-<strong>This project reflects the small environment with Flask Python webapp integrated with MySQL database. Its installation is automated using Ansible.</strong>
+<strong>This project reflects the small environment with Flask Python webapp integrated with PostgreSQL database. Its installation is automated using Ansible.</strong>
 
 ## How to prepare the environment?
 
