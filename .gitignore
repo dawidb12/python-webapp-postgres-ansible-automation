@@ -1,0 +1,4 @@
+.vagrant/
+.vscode/
+id_rsa*
+to_do.txt

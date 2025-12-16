@@ -1,0 +1,55 @@
+---
+- name: Ensure group "prometheus" exists.
+  ansible.builtin.group:
+    name: prometheus
+    state: present
+
+- name: Create a "prometheus" user.
+  ansible.builtin.user:
+    name: prometheus
+    group: prometheus
+
+- name: Check if the node exporter is installed.
+  ansible.builtin.stat:
+    path: "{{ exporter_binary_dest }}/exporter"
+  register: p
+
+- name: Install node exporter.
+  ansible.builtin.unarchive:
+    src: "{{ exporter_installer_url }}"
+    dest: "{{ exporter_binary_dest }}"
+    remote_src: true
+  when: p.stat.exists == false
+
+- name: Change the name of node_exporter folder.
+  ansible.builtin.command: "mv {{ exporter_binary_dest }}/{{ exporter_installer_folder }} {{ exporter_binary_dest }}/exporter"
+  args:
+    creates: "{{ exporter_binary_dest }}/exporter"
+  when: p.stat.exists == false
+
+- name: Recursively change ownership of a directory
+  ansible.builtin.file:
+    path: "{{ exporter_binary_dest }}/exporter"
+    state: directory
+    recurse: yes
+    owner: prometheus
+    group: prometheus
+
+- name: Prepare systemd unit for launching the node exporter.
+  ansible.builtin.template:
+    src: "templates/node_exporter.service.j2"
+    dest: "{{ systemd_dir }}/{{ exporter_service_unit }}"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Force systemd to reread configs.
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Ensure the exporter is started and enabled on boot.
+  ansible.builtin.service:
+    name: "{{ exporter_service_unit }}"
+    state: started
+    enabled: true
+  become: true

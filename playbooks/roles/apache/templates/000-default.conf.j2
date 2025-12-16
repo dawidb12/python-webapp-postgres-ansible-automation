@@ -1,0 +1,18 @@
+<VirtualHost *:80>
+	ServerName pythonapp.example.net
+
+	ServerAdmin admin@example.net
+	DocumentRoot /var/www/html
+	ProxyPass /{{ error_page_dir }}/ !
+{% for host in groups['app'] %}
+	ProxyPass / http://{{ hostvars[host].ansible_host }}:5000/
+	ProxyPassReverse / http://{{ hostvars[host].ansible_host }}:5000/
+{% endfor %}
+
+	ErrorLog ${APACHE_LOG_DIR}/error.log
+	CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+	ErrorDocument 500 /{{ error_page_dir }}/maintenance.html
+	ErrorDocument 502 /{{ error_page_dir }}/maintenance.html
+	ErrorDocument 503 /{{ error_page_dir }}/maintenance.html
+</VirtualHost>

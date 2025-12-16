@@ -1,0 +1,154 @@
+---
+- name: Gather the package facts.
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Install packages.
+  block: 
+    - name: Install pip3 and other dependencies.
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: true
+      with_items: "{{ packages.other_packages }}"
+      when: "item not in ansible_facts.packages"
+
+    - name: Install psycopg2.
+      ansible.builtin.command: "pip3 install psycopg2 --break-system-packages"
+      changed_when: false
+
+    - name: Install PostgreSQL.
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: true
+      with_items: "{{ packages.postgres_packages }}"
+      when: "item not in ansible_facts.packages"
+  
+  rescue:
+    - name: Prepare log content
+      ansible.builtin.shell: date
+      register: datetime
+
+    - name: Log errors to a file.
+      ansible.builtin.copy:
+        content: |
+          Log entry:
+          Host: {{ inventory_hostname }}
+          Date: {{ datetime.stdout }}
+          Status: Applications cannot be installed.
+        dest: /tmp/ansible_fail_log.txt
+        owner: root
+        group: root
+        mode: '0644'
+
+  always:
+    - name: Prepare log content
+      ansible.builtin.shell: date
+      register: datetime
+
+    - name: Always log it to a file.
+      ansible.builtin.copy:
+        content: |
+          Log entry:
+          Host: {{ inventory_hostname }}
+          Date: {{ datetime.stdout }}
+          Status: Apps installation task finished. If any errors, check the /tmp/ansible_fail_log.txt.
+        dest: /tmp/ansible_always_log.txt
+        owner: root
+        group: root
+        mode: '0644'
+
+- name: Ensure PostgreSQL is started and enabled on boot.
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Find the postgres configuration file.
+  ansible.builtin.find:
+    paths: /etc
+    recurse: true
+    file_type: file
+    use_regex: true
+    patterns: '^postgresql.conf$'
+  register: conf
+
+- name: Ensure PostgreSQL is set to allow remote connections.
+  ansible.builtin.lineinfile:
+    path: "{{ conf.files[0].path }}"
+    regexp: '^#listen_addresses '
+    line: listen_addresses = '*'
+    owner: postgres
+    group: postgres
+  notify: restart_postgres
+
+- name: Find the pg_hba.conf file.
+  ansible.builtin.find:
+    paths: /etc
+    recurse: true
+    file_type: file
+    use_regex: true
+    patterns: '^pg_hba.conf$'
+  register: pg_hba
+
+- name: Edit the pg_hba.conf file.
+  ansible.builtin.blockinfile:
+    path: "{{ pg_hba.files[0].path }}"
+    marker: "### {mark} ANSIBLE MANAGED BLOCK ###"
+    block: |
+      host    all             all              192.168.60.0/24                       md5
+      host    all             all              ::ffff:192.168.60.0/120               md5
+  notify: restart_postgres
+
+- name: Copy the SQL script.
+  ansible.builtin.copy:
+    src: files/db-init.sql
+    dest: /tmp
+    owner: postgres
+    group: postgres
+    mode: 0600
+
+- name: Prepare the database.
+  block:
+    - name: Create a new database user.
+      community.postgresql.postgresql_user:
+        name: "{{ postgres_user }}"
+        password: "{{ postgres_password }}"
+
+    - name: Create a new database.
+      community.postgresql.postgresql_db:
+        name: "{{ postgres_db }}"
+        encoding: UTF-8
+        lc_collate: 'en_US.UTF-8'
+        lc_ctype: 'en_US.UTF-8'
+        locale_provider: icu
+        icu_locale: pl-PL-x-icu
+        template: template0
+
+    - name: Grant ALL priviledges on database "{{ postgres_db }}" to "{{ postgres_user }}".
+      community.postgresql.postgresql_privs:
+        login_db: "{{ postgres_db }}"
+        privs: ALL
+        type: database
+        role: "{{ postgres_user }}"
+
+    - name: Execute the script against the "{{ postgres_db }}" database.
+      community.postgresql.postgresql_script:
+        login_db: "{{ postgres_db }}"
+        path: /tmp/db-init.sql
+        encoding: UTF-8
+    
+    - name: Grant ALL priviledges on table 'accounts' to "{{ postgres_user }}".
+      community.postgresql.postgresql_privs:
+        login_db: "{{ postgres_db }}"
+        privs: ALL
+        type: table
+        obj: accounts
+        role: "{{ postgres_user }}"
+  become_user: postgres
+
+- name: Delete the SQL script.
+  ansible.builtin.file:
+    path: /tmp/db-init.sql
+    state: absent

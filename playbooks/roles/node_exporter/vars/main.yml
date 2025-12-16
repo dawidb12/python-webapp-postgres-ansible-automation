@@ -1,0 +1,5 @@
+exporter_installer_url: https://github.com/prometheus/node_exporter/releases/download/v1.10.2/{{ exporter_installer_folder }}.tar.gz
+exporter_installer_folder: node_exporter-1.10.2.linux-amd64
+exporter_binary_dest: /opt
+systemd_dir: /usr/lib/systemd/system
+exporter_service_unit: node_exporter.service

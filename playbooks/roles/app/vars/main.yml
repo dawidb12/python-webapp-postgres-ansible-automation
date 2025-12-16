@@ -1,0 +1,44 @@
+app_secret_key: 0123456789
+postgres_user: appuser
+postgres_password: apppassword
+postgres_db: baza_uzytkownikow
+postgres_server: 192.168.60.113
+postgres_port: 5432
+packages:
+  - python3-pip
+  - python3-dev
+  - postgresql-client
+  - pkg-config
+  - build-essential
+  - libpq-dev
+app_path: /app
+systemd_dir: /usr/lib/systemd/system
+pythonapp_service_unit: pythonapp.service
+python_interpreter: /usr/bin/python3
+app_owner: vagrant
+app_group: vagrant
+github_repo_url: https://github.com/dawidb12/python-webapp-mysql-ansible-automation/tree/master/playbooks/roles/app/files
+webapp_files:
+  - files/static
+  - files/templates
+  - files/.env
+python_webapp_packages:
+  - Flask
+  - python-dotenv
+  - psycopg2
+templates_to_edit:
+  - path: "{{ app_path }}/templates/display.html"
+    regexp: "        <title>display</title>"
+    line: "        <title>Dane użytkownika {{ '{{' }} account[1] {{ '}}' }}</title>"
+  - path: "{{ app_path }}/templates/index.html"
+    regexp: "        <title>index</title>"
+    line: "        <title>Strona główna</title>"
+  - path: "{{ app_path }}/templates/login.html"
+    regexp: "        <title> Login </title>"
+    line: "        <title> Logowanie </title>"
+  - path: "{{ app_path }}/templates/register.html"
+    regexp: "                <h1>Register</h1>"
+    line: "                <h1>Panel rejestracji</h1>"
+  - path: "{{ app_path }}/templates/update.html"
+    regexp: "        <title>update</title>"
+    line: "        <title>Aktualizacja danych użytkownika</title>"

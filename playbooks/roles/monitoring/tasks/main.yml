@@ -1,0 +1,65 @@
+---
+- name: Ensure group "prometheus" exists.
+  ansible.builtin.group:
+    name: prometheus
+    state: present
+
+- name: Create a "prometheus" user.
+  ansible.builtin.user:
+    name: prometheus
+    group: prometheus
+
+- name: Check if the Prometheus is installed.
+  ansible.builtin.stat:
+    path: "{{ prometheus_binary_dest }}/prometheus"
+  register: p
+
+- name: Extract the archive
+  ansible.builtin.unarchive:
+    src: "{{ prometheus_installer_url }}"
+    dest: "{{ prometheus_binary_dest }}"
+    remote_src: true
+  when: p.stat.exists == false
+
+- name: Change the name of prometheus folder.
+  ansible.builtin.command: "mv {{ prometheus_binary_dest }}/{{ prometheus_installer }} {{ prometheus_binary_dest }}/prometheus"
+  args:
+    creates: "{{ prometheus_binary_dest }}/prometheus"
+  when: p.stat.exists == false
+
+- name: Recursively change ownership of a directory
+  ansible.builtin.file:
+    path: "{{ prometheus_binary_dest }}/prometheus"
+    state: directory
+    recurse: yes
+    owner: prometheus
+    group: prometheus
+
+- name: Include exporter nodes in prometheus.yml file.
+  ansible.builtin.template:
+    src: "templates/prometheus.yml.j2"
+    dest: "{{ prometheus_binary_dest }}/prometheus/prometheus.yml"
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+  notify: restart_prometheus
+  tags: notest
+
+- name: Prepare systemd unit for launching the prometheus.
+  ansible.builtin.template:
+    src: "templates/prometheus.service.j2"
+    dest: "{{ systemd_dir }}/{{ prometheus_service_unit }}"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Force systemd to reread configs.
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Ensure the prometheus is started and enabled on boot.
+  ansible.builtin.service:
+    name: "{{ prometheus_service_unit }}"
+    state: started
+    enabled: true
+  become: true

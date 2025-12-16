@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title> Login </title>
+        <link rel="stylesheet" href="../static/style.css">      
+    </head>
+    <body>
+        <div class="logincontent" align="center">
+            <div class="logintop">
+                <h1>Logowanie</h1>
+            </div></br></br></br></br>
+            <div class="loginbottom">
+              <form action="{{ '{{' }} url_for('login'){{ '}}' }}" method="post" autocomplete="off">
+            <div class="msg">{{ '{{' }} msg {{ '}}' }}</div>
+            <input type="text" name="username" placeholder="Nazwa użytkownika" class="textbox" id="username" required></br></br>
+            <input type="password" name="password" placeholder="Hasło" class="textbox" id="password" required></br></br></br>
+            <input type="submit" class="btn" value="Zaloguj się">
+              </form></br></br>
+              <p class="worddark">Jesteś tu po raz pierwszy? <a class="worddark" href="{{ '{{' }} url_for('register'){{ '}}' }}">Zarejestruj się</a></p>
+              <p class="worddark">Nazwa serwera: {{ ansible_hostname }}</p>
+              <p class="worddark">IP serwera: {{ hostvars['app-server'].ansible_host }}</p>
+            </div>
+        </div>
+    </body>
+</html>

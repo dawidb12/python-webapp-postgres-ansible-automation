@@ -1,0 +1,61 @@
+---
+- name: Gather the package facts.
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Install apache2 and curl.
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  with_items: "{{ packages }}"
+  when: "item not in ansible_facts.packages"
+  loop: "{{ packages }}"
+
+- name: Ensure apache is started and enabled on boot.
+  ansible.builtin.service:
+    name: apache2
+    state: started
+    enabled: true
+
+- name: Resolve the issue "Could not reliably determine the server's fully qualified domain name".
+  ansible.builtin.lineinfile:
+    path: /etc/apache2/apache2.conf
+    regexp: '^ServerName '
+    line: ServerName 127.0.0.1
+  notify: restart_apache
+
+- name: Check if proxy_http module is enabled.
+  ansible.builtin.command: "apachectl -M"
+  register: proxy_http_status
+  changed_when: false
+
+- name: Enable proxy_http module.
+  ansible.builtin.command: a2enmod proxy_http
+  notify: restart_apache
+  when: ' "proxy_http_module" not in proxy_http_status.stdout'
+
+- name: Create directory structure for custom maintenance page.
+  ansible.builtin.file:
+    path: "/var/www/html/{{ error_page_dir }}"
+    owner: root
+    group: root
+    state: directory
+    mode: '0755'
+
+- name: Copy custom maintenance page.
+  ansible.builtin.template:
+    src: "templates/maintenance.html.j2"
+    dest: "/var/www/html/{{ error_page_dir }}/maintenance.html"
+    owner: root
+    group: root
+  notify: reload_apache
+
+- name: Copy apache2 configuration.
+  tags: notest
+  ansible.builtin.template:
+    src: "templates/000-default.conf.j2"
+    dest: "/etc/apache2/sites-available/000-default.conf"
+    owner: root
+    group: root
+  notify: reload_apache

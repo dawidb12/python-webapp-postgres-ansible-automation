@@ -1,0 +1,6 @@
+---
+- name: restart_app
+  service:
+    name: "{{ pythonapp_service_unit }}"
+    state: restarted
+  become: true

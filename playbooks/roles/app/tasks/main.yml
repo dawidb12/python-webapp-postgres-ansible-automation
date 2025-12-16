@@ -1,0 +1,128 @@
+---
+- name: Prepare an environment.
+  block:
+  - name: Gather the package facts.
+    ansible.builtin.package_facts:
+      manager: auto
+
+  - name: Gather the service facts.
+    ansible.builtin.service_facts:
+
+  - name: Install packages.
+    ansible.builtin.apt:
+      name: "{{ item }}"
+      state: present
+      update_cache: true
+    with_items: "{{ packages }}"
+    when: "item not in ansible_facts.packages"
+    loop: "{{ packages }}"
+
+  - name: Install github-clone.
+    ansible.builtin.command: "sudo -u {{ app_owner }} pip3 install github-clone --break-system-packages"
+    changed_when: false
+  
+  - name: Check if an 'app' directory exists.
+    ansible.builtin.stat:
+      path: "{{ app_path }}"
+    register: app_dir_result
+
+  - name: Create an 'app' directory.
+    ansible.builtin.file:
+      path: "{{ app_path }}"
+      state: directory
+      owner: "{{ app_owner }}"
+      group: "{{ app_group }}"
+    when: not app_dir_result.stat.exists
+
+  - name: Pull webapp components from GitHub.
+    ansible.builtin.command: "sudo -u {{ app_owner }} python3 -m ghclone {{ github_repo_url }}"
+    changed_when: false
+    args:
+      chdir: "/home/{{ app_owner }}"
+
+  - name: Copy the app code.
+    ansible.builtin.template:
+      src: templates/app.py.j2
+      dest: "{{ app_path }}/app.py"
+      owner: "{{ app_owner }}"
+      group: "{{ app_group }}"
+    notify: restart_app
+
+  - name: Copy other webapp components.
+    ansible.builtin.copy:
+      src: "/home/{{ app_owner }}/{{ item }}"
+      dest: "{{ app_path }}"
+      owner: "{{ app_owner }}"
+      group: "{{ app_group }}"
+      remote_src: true
+    with_items:
+      "{{ webapp_files }}"
+    notify: restart_app
+
+  - name: Delete code from temp directory.
+    ansible.builtin.file:
+      path: "/home/{{ app_owner }}/files"
+      state: absent
+  
+  - name: Copy the new version of 'display.html' to templates folder.
+    ansible.builtin.copy:
+      src: "files/display.html"
+      dest: "{{ app_path }}/templates/display.html"
+      owner: "{{ app_owner }}"
+      group: "{{ app_group }}"
+    notify: restart_app
+
+  - name: Add hostname and IP address of a node to main page.
+    tags: notest
+    ansible.builtin.template:
+      src: "templates/login.html.j2"
+      dest: "{{ app_path }}/templates/login.html"
+      owner: "{{ app_owner }}"
+      group: "{{ app_group }}"
+      mode: '0644'
+    notify: restart_app
+  
+  - name: Edit the templates files.
+    ansible.builtin.lineinfile:
+      path: "{{ item.path }}"
+      regexp: "{{ item.regexp }}"
+      line: "{{ item.line }}"
+    with_items:
+      - "{{ templates_to_edit }}"
+    notify: restart_app
+  
+  - name: Create a requirements.txt file.
+    ansible.builtin.blockinfile:
+      path: "{{ app_path }}/requirements.txt"
+      owner: "{{ app_owner }}"
+      group: "{{ app_group }}"
+      marker: "### {mark} ANSIBLE MANAGED BLOCK ###"
+      create: true
+      block: |
+        {% for item in python_webapp_packages %}
+        {{ item }}
+        {% endfor %}
+
+  - name: Prepare systemd unit for launching the app.
+    ansible.builtin.template:
+      src: "templates/pythonapp.service.j2"
+      dest: "{{ systemd_dir }}/{{ pythonapp_service_unit }}"
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Force systemd to reread configs.
+    ansible.builtin.systemd_service:
+      daemon_reload: true
+  become: true
+
+- name: Install pip packages.
+  ansible.builtin.command: "sudo -u {{ app_owner }} pip3 install -r {{ app_path }}/requirements.txt --break-system-packages"
+  changed_when: false
+
+- name: Run the app and ensure it's enabled on boot.
+  ansible.builtin.service:
+    name: "{{ pythonapp_service_unit }}"
+    state: started
+    enabled: true
+  become: true

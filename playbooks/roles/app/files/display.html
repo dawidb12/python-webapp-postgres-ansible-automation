@@ -1,0 +1,66 @@
+<html lang="en">
+    <head>
+        <title>display</title>
+        <link rel="stylesheet" href="../static/style.css">
+    </head>
+    <body bgcolor="fce7dd">
+        <div class="one">
+            <div class="two">
+                <h1>Menu główne</h1>
+                <ul>
+                    <li><a href="{{url_for('index')}}">Strona główna</a></li>
+                    <li class="active"><a href="{{url_for('display')}}">Dane użytkownika</a></li>
+                    <li><a href="{{url_for('update')}}">Zmień dane</a></li>
+                    <li><a href="{{url_for('logout')}}">Wyloguj się</a></li>
+                </ul>
+            </div>
+            <div class="content" align="center">
+                <div class="topbar">
+                    <h2>Dane użytkownika {{ account[1] }}</h2>                       
+                </div>  </br>
+                <div class="contentbar">
+                    <h1>Twoje dane</h1>    </br>
+                     {% block content %}
+                        <div class="border">
+                            <table class="worddark"></br></br></br></br>
+                                <tr>
+                                    <td>Nazwa użytkownika:</td>
+                                    <td>{{ account[1] }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Adres e-mail:</td>
+                                    <td>{{ account[3] }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Organizacja:</td>
+                                    <td>{{ account[4] }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Adres zamieszkania:</td>
+                                    <td>{{ account[5] }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Miasto:</td>
+                                    <td>{{ account[6] }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Województwo:</td>
+                                    <td>{{ account[7] }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Kraj:</td>
+                                    <td>{{ account[8] }}</td>
+                                </tr> 
+                                <tr>
+                                    <td>Kod pocztowy:</td>
+                                    <td>{{ account[9] }}</td>
+                                </tr>                         
+                            </table>
+                        </div>
+                    {% endblock %}                                          
+                </div>
+                 
+            </div>
+        </div>
+    </body>
+</html>

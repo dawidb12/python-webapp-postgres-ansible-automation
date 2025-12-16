@@ -1,0 +1,30 @@
+- name: Converge
+  hosts: all
+  # We disable gather facts because it would fail due to our container not
+  # having python installed. This will not prevent use from running 'raw'
+  # commands. Most molecule users are expected to use containers that already
+  # have python installed in order to avoid notable delays installing it.
+  gather_facts: false
+  tasks:
+    - name: Gather the package facts.
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Install curl.
+      ansible.builtin.apt:
+        name: curl
+        state: present
+        update_cache: true
+      when: "'curl' not in ansible_facts.packages"
+
+    - name: Import the 'monitoring' role.
+      ansible.builtin.import_role:
+        name: "../../../../roles/monitoring"
+
+  post_tasks:
+    - name: Make sure the application is up and running.
+      ansible.builtin.command: curl -s -o /dev/null -w "%{http_code}" http://localhost:9090/metrics
+      register: status_code
+      changed_when: false
+      failed_when:
+        - status_code.stdout_lines[0] != "200"

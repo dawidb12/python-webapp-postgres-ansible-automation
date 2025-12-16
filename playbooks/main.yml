@@ -1,0 +1,24 @@
+---
+- hosts: db
+  become: true
+  roles:
+    - database
+
+- hosts: app
+  roles:
+    - app
+
+- hosts: web
+  become: true
+  roles:
+    - apache
+
+- hosts: exporters
+  become: true
+  roles:
+    - node_exporter
+
+- hosts: monitoring
+  become: true
+  roles:
+    - monitoring

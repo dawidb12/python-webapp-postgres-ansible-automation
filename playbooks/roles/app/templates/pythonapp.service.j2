@@ -1,0 +1,12 @@
+[Unit]
+Description=Python Flask Application
+After=network.target
+
+[Service]
+User={{ app_owner }}
+WorkingDirectory={{ app_path }}
+ExecStart={{ python_interpreter }} {{ app_path }}/app.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,5 @@
+prometheus_installer: prometheus-3.8.0.linux-amd64
+prometheus_installer_url: https://github.com/prometheus/prometheus/releases/download/v3.8.0/{{ prometheus_installer }}.tar.gz
+prometheus_binary_dest: /opt
+systemd_dir: /usr/lib/systemd/system
+prometheus_service_unit: prometheus.service

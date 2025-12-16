@@ -1,0 +1,38 @@
+- name: Converge
+  hosts: all
+  # We disable gather facts because it would fail due to our container not
+  # having python installed. This will not prevent use from running 'raw'
+  # commands. Most molecule users are expected to use containers that already
+  # have python installed in order to avoid notable delays installing it.
+  gather_facts: false
+  tasks:
+    - name: Import the 'apache' role.
+      ansible.builtin.import_role:
+        name: "../../../../roles/apache"
+
+  post_tasks:
+    - name: Populate service facts
+      ansible.builtin.service_facts:
+
+    - name: Make sure the apache service is up and running.
+      ansible.builtin.debug:
+        var: ansible_facts['services']['apache2.service']['state']
+      failed_when:
+        - ansible_facts['services']['apache2.service']['state'] != "running"
+      
+    - name: Make sure the default apache page is accessible on http://localhost:80.
+      ansible.builtin.command: curl -s -o /dev/null -w "%{http_code}" http://localhost
+      register: status_code
+      changed_when: false
+      failed_when:
+        - status_code.stdout_lines[0] != "200"
+    
+    - name: Make sure maintenance page is located under /var/www/html/custom_error_pages.
+      ansible.builtin.stat:
+        path: /var/www/html/custom_error_pages/maintenance.html
+      register: st
+
+    - name: Fail if the maintenance page does not exist.
+      ansible.builtin.fail:
+        msg: "maintenance.html does not exist under /var/www/html."
+      when: st.stat.exists != true

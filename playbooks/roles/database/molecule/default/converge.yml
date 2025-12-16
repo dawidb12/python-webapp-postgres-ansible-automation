@@ -1,0 +1,70 @@
+- name: Converge
+  hosts: all
+  # We disable gather facts because it would fail due to our container not
+  # having python installed. This will not prevent use from running 'raw'
+  # commands. Most molecule users are expected to use containers that already
+  # have python installed in order to avoid notable delays installing it.
+  gather_facts: false
+  tasks:
+    - name: Gather the package facts.
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Install postgresql and vim.
+      ansible.builtin.apt:
+        name: postgresql
+        state: present
+        update_cache: true
+      when: "'postgresql' not in ansible_facts.packages"
+    
+    - name: Find the pg_hba.conf file.
+      ansible.builtin.find:
+        paths: /etc
+        recurse: true
+        file_type: file
+        use_regex: true
+        patterns: '^pg_hba.conf$'
+      register: pg_hba
+    
+    - name: Change 'peer' to 'trust' in pg_hba.conf file.
+      ansible.builtin.lineinfile:
+        path: "{{ pg_hba.files[0].path }}"
+        regexp: '^local   all             postgres'
+        line: local   all             postgres                                trust
+        owner: postgres
+        group: postgres
+    
+    - name: Restart postgresql.
+      ansible.builtin.service:
+        name: postgresql
+        state: restarted
+
+    - name: Import the 'database' role.
+      ansible.builtin.import_role:
+        name: "../../../../roles/database"
+
+  post_tasks:
+    - name: Populate service facts
+      ansible.builtin.service_facts:
+
+    - name: Make sure the postgresql service is up and running.
+      ansible.builtin.debug:
+        var: ansible_facts['services']['postgresql@16-main.service']
+      failed_when:
+        - ansible_facts['services']['postgresql@16-main.service']['state'] != "running"
+
+    - name: Check if the database is prepared.
+      ansible.builtin.command: psql -U postgres -d {{ postgres_db }} -c '\dt'
+      become_user: postgres
+      register: db
+      changed_when: false
+      failed_when:
+        - '"account" not in db.stdout'
+    
+    - name: Check if the table is prepared.
+      ansible.builtin.command: psql -U postgres -d {{ postgres_db }} -c 'SELECT * FROM accounts'
+      become_user: postgres
+      register: table
+      changed_when: false
+      failed_when:
+        - '"organisation" not in table.stdout'

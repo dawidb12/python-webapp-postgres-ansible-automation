@@ -1,0 +1,14 @@
+packages:
+  postgres_packages:
+    - postgresql 
+    - postgresql-contrib
+  other_packages:
+    - python3-pip
+    - python3-dev
+    - libpq-dev
+    - acl
+os_user: vagrant
+postgres_user: appuser
+postgres_password: apppassword
+postgres_server: 192.168.60.113
+postgres_db: baza_uzytkownikow
