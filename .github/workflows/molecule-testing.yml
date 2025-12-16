@@ -40,14 +40,9 @@ jobs:
             sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
         if: ${{ startsWith(matrix.distro, 'debian') }}
 
-    #   - name: Debug again.
-    #     run: pwd && ls -lrt
-      
-    #   - name: Go to the role.
-    #     run: cd apache && ls -lrt
-
       - name: Run Molecule tests.
-        run: cd apache && molecule test
+        working-directory: ./apache
+        run: ls -lrt && molecule test
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
