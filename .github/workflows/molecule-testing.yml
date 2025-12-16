@@ -43,11 +43,11 @@ jobs:
     #   - name: Debug again.
     #     run: pwd && ls -lrt
       
-      - name: Go to the role.
-        run: cd apache && ls -lrt
+    #   - name: Go to the role.
+    #     run: cd apache && ls -lrt
 
       - name: Run Molecule tests.
-        run: ls -lrt && molecule test
+        run: cd apache && molecule test
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
