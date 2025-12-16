@@ -17,8 +17,8 @@ jobs:
     strategy:
       matrix:
         distro:
-        #   - ubuntu2404
-          - debian13
+          - ubuntu2404
+        #   - debian13
     steps:
       - name: Check out the codebase.
         uses: actions/checkout@v4
@@ -41,9 +41,41 @@ jobs:
             sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
         if: ${{ startsWith(matrix.distro, 'debian') }}
 
-      - name: Run Molecule tests.
+      - name: Run Molecule tests for apache role.
         working-directory: playbooks/roles/apache
-        run: ls -lrt && molecule create
+        run: molecule test
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          MOLECULE_DISTRO: ${{ matrix.distro }}
+    
+      - name: Run Molecule tests for app role.
+        working-directory: playbooks/roles/app
+        run: molecule test
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          MOLECULE_DISTRO: ${{ matrix.distro }}
+
+      - name: Run Molecule tests for database role.
+        working-directory: playbooks/roles/database
+        run: molecule test
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          MOLECULE_DISTRO: ${{ matrix.distro }}
+
+      - name: Run Molecule tests for monitoring role.
+        working-directory: playbooks/roles/monitoring
+        run: molecule test
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          MOLECULE_DISTRO: ${{ matrix.distro }}
+
+      - name: Run Molecule tests for node_exporter role.
+        working-directory: playbooks/roles/node_exporter
+        run: molecule test
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
