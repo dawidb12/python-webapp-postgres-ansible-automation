@@ -43,7 +43,7 @@ jobs:
 
       - name: Run Molecule tests for apache role.
         working-directory: playbooks/roles/apache
-        run: molecule test
+        run: molecule converge && molecule destroy
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
