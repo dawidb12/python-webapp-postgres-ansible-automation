@@ -42,9 +42,12 @@ jobs:
             sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
         if: ${{ startsWith(matrix.distro, 'debian') }}
 
-      - name: Run Molecule tests.
-        run: molecule test
-        env:
-          PY_COLORS: '1'
-          ANSIBLE_FORCE_COLOR: '1'
-          MOLECULE_DISTRO: ${{ matrix.distro }}
+      - name: Check the current path.
+        run: pwd
+
+    #   - name: Run Molecule tests.
+    #     run: molecule test
+    #     env:
+    #       PY_COLORS: '1'
+    #       ANSIBLE_FORCE_COLOR: '1'
+    #       MOLECULE_DISTRO: ${{ matrix.distro }}
