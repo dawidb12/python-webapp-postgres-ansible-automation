@@ -41,7 +41,7 @@ jobs:
         if: ${{ startsWith(matrix.distro, 'debian') }}
 
       - name: Run Molecule tests.
-        working-directory: roles/apache
+        working-directory: playbooks/roles/apache
         run: ls -lrt && molecule create
         env:
           PY_COLORS: '1'
